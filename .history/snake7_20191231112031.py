@@ -8,7 +8,7 @@ pygame.font.init()
 myfont=pygame.font.SysFont("monospace",50)
 
 
-width = 500
+width = 800
 hight = 800                                                                 # größe muss mit funktion pause übereinstimmen!
 
 widthPlayer = 20
