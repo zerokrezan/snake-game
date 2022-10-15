@@ -1,12 +1,16 @@
-
 import pygame
 import random as r
 import time
 import sys
+import pickle
+import os
 
 pygame.font.init()
 myfont=pygame.font.SysFont("monospace",50)
+myfonts = pygame.font.SysFont("monospaces",50)
+points = 0
 
+clock = pygame.time.Clock()
 
 width = 800
 hight = 800                                                                 # größe muss mit funktion pause übereinstimmen!
@@ -19,6 +23,7 @@ speed_y = 0
 
 pygame.init()
 
+
 mouse = pygame.mouse.get_pos()
 screen = pygame.display.set_mode((width, hight))
 running = True
@@ -28,56 +33,75 @@ y = 240
 f_x = r.randint(1, 24) * widthPlayer
 f_y = r.randint(1, 24) * hightPlayer
 
-body = [(240, 240), (220, 240), (200, 240),(180,240),(160,240)]
-noFruitEaten = True                         
+body = [(240,240) ]
+noFruitEaten = True   
+filesize_points = os.path.getsize("points1.py")
+filesize_body = os.path.getsize("body.py")                   
 
 def gameloop(screens):
+    global filesize_points
+    global filesize_body
+    global points
     global speed_x, speed_y
     global body
     clock = pygame.time.Clock()
     global x, y
-    
-    
-        
-    
+    pygame.mixer.init()
+    pygame.mixer.music.load("startgame.wav")
+    pygame.mixer.music.play()
     menue = True
+
+
+    if filesize_points != 0:
+        points = pickle.load(open("points1.py", "rb"))
+        body = pickle.load(open("body.py", "rb"))
+        speed_x = pickle.load(open("speed_x.py", "rb"))
+        speed_y = pickle.load(open("speed_y.py", "rb"))
+        x = body[0][0]
+        y = body[0][1]
+       
+   
     while True:
+     
         while menue:
             
             screen.fill((255,255,0))
-        
-        
+           
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit(0)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:                               # 1 = left_mousekey, 2 = middle_mousekey, 3 = right_mousekey, 4 = scrollup_mousekey, 5 = scrolldown_mousekey
+                   
+                    if event.button == 1:                                                       # 1 = left_mousekey, 2 = middle_mousekey, 3 = right_mousekey, 4 = scrollup_mousekey, 5 = scrolldown_mousekey
                         menue = False
+                        pygame.mixer.music.load("start.wav")
+                        pygame.mixer.music.play()
 
-        
+         
             text2=myfont.render("Click anywhere on the ",1000,((0,0,0)))
             text3=myfont.render("screen to start ",1000,((0,0,0)))
             text4 = myfont.render(" the game!",1000,((0,0,0)))
-            screen.blit(text2,(80, 250))
-            screen.blit(text3,(150, 300))
-            screen.blit(text4,(230, 350))
+            screen.blit(text2,(50, 250))
+            screen.blit(text3,(150, 350))
+            screen.blit(text4,(200, 450))
+        
             pygame.display.set_caption("menue!")
         
             pygame.display.update()
 
 
-
-
+        point=myfont.render( str(points),1000,((0,255,255)))
+        screen.blit(point,(730, 10))
 
         pygame.display.update()
         screen.fill(pygame.color.Color("black"))
         events = pygame.event.get()
         check_pause(events)
         checkquit(events)
-        #button(350,170,120,60,(150,0,0),(255,0,0))
-        #button(150,170,120,60,(0,150,0),(0,255,0))
+        save(events)
+        
         for rect in body:
             pygame.draw.rect(screen,
                             (255, 0, 0),
@@ -116,9 +140,15 @@ def handle_movement(liste):
                 speed_x = 0
 
 def check_eaten():
+    global points
     global f_x, f_y
     global noFruitEaten                        
     if x == f_x and y == f_y:
+        points += 1
+        #print(points)
+        
+        pygame.mixer.music.load("2.wav")
+        pygame.mixer.music.play()
         while True:
             coordinatesFound = True
             maybe_x = r.randint(1, 24) * widthPlayer
@@ -133,7 +163,6 @@ def check_eaten():
         f_x = maybe_x
         f_y = maybe_y
         noFruitEaten = False                        
-
 
 
 def handle_body():
@@ -166,18 +195,22 @@ def check_body_touched():
     global width,hight
     for k in body[4:]:
         if k[0] == x and k[1] == y:
-            exit(0)
+            pygame.mixer.init()
+            pygame.mixer.music.load("gameover.wav")
+            pygame.mixer.music.play()
+            pygame.time.delay(1500)
+            exit()
+            
+            
+    
             pygame.display.set_mode((width, hight))
             pygame.display.flip()
-
-
-
+           
 
 def checkquit(e):
     for ev in e:
         if ev.type == pygame.QUIT:
             exit(0)
-
 
            
 def check_pause(events):
@@ -190,8 +223,8 @@ def check_pause(events):
 
     if pause == True:
         red = (255, 0, 0)
-        screen = pygame.display.set_mode((width, hight))
-        screen.fill((0, 0, 0))
+        #screen = pygame.display.set_mode((width, hight))
+        #screen.fill((0, 0, 0))
         myfont = pygame.font.SysFont("monospace", 50)
         text1 = myfont.render("Pause!", 100, red)
         text2 = myfont.render("Please resume your game!", 50, red)
@@ -208,9 +241,81 @@ def check_pause(events):
                         break
 
 
+def save(p):
+    global speed_x
+    global speed_y
+    global body
+    global points
+    save = False
+    for event in p:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_s:
+                save = True    
+    if save == True:
+        pickle.dump(points, open("points1.py", "wb"))
+        pickle.dump(body, open("body.py", "wb"))
+        pickle.dump(speed_x, open("speed_x.py", "wb"))
+        pickle.dump(speed_y, open("speed_y.py", "wb"))
+        myfont = pygame.font.SysFont("myfont", 50)
+        text1 = myfont.render("Savin Game!", 100, (255,0,0))
+        screen.blit(text1, (300, 300))
+        pygame.display.update()
+        while save == True:
+            events = pygame.event.get()
+            checkquit(events)
 
-    
+            #pickle.dump(points, open("points1.py", "wb"))
+            text2 = myfont.render(str(points), 50, (255,0,0))
+            screen.blit(text2, (30, 350))
+            pygame.display.update()
+            exit(0)
 
+    # unsave game
+    unsave = False
+    for event in p:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r:
+                unsave = True
+    if unsave == True:
+        myfont2 = pygame.font.SysFont("myfont", 50)
+        text3 = myfont2.render("Closing Game Unsaved!", 100, (255,0,0))
+        screen.blit(text3, (300, 300))
+        pygame.display.update()
+        while unsave == True:
+            events = pygame.event.get()
+            checkquit(events)
+
+            #pickle.dump(points, open("points1.py", "wb"))
+            text4 = myfont2.render(str(points), 50, (255,0,0))
+            screen.blit(text4, (30, 350))
+            pygame.display.update()
+            exit(0)
+    # start a new game - reached points will be deleted and set to 0
+    newGame = False
+    for event in p:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                newGame = True
+    if newGame == True:
+        with open("points1.py", 'r+') as f:
+            f.truncate(0)
+        #pickle.dump(0, open("points1.py", "wb"))
+        #pickle.dump(0, open("body.py", "wb"))
+        #pickle.dump(0, open("speed_x.py", "wb"))
+        #pickle.dump(0, open("speed_y.py", "wb"))
+        myfont3 = pygame.font.SysFont("myfont", 50)
+        text5 = myfont3.render("Closing Game Unsaved!", 100, (255,0,0))
+        screen.blit(text5, (300, 300))
+        pygame.display.update()
+        while newGame == True:
+            events = pygame.event.get()
+            checkquit(events)
+
+            #pickle.dump(points, open("points1.py", "wb"))
+            text6 = myfont3.render(str(points), 50, (255,0,0))
+            screen.blit(text6, (30, 350))
+            pygame.display.update()
+            exit(0)
 
 
 gameloop(screen)
